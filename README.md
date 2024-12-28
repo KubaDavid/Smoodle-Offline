@@ -1,7 +1,7 @@
 # Šmoodle Crawler
 
 ## Overview
-This script uses Python with Selenium to crawl and download content from a Moodle course. It organizes the content into sections, parts, and chapters, and compiles all the downloaded data into one large HTML file.
+This tool is designed for students to download and organize course content from Moodle for offline reading. It uses Python with Selenium to crawl through Moodle course sections, parts, and chapters, and compiles all the downloaded content into a single, easy-to-navigate HTML file.
 
 ---
 
@@ -20,7 +20,7 @@ pip install -r requirements.txt
 ## Setting Up the Environment
 1. Create a `.env` file in the project directory with the following structure:
 ```
-DOMAIN=moodle.vse.cz
+DOMAIN=moodle.domain.cz
 COURSE_ID=123456
 DOWNLOAD_DIR=downloads
 MOODLE_SESSION_COOKIE=your-moodlesession-cookie-value
@@ -35,7 +35,7 @@ MOODLE_SESSION_COOKIE=your-moodlesession-cookie-value
 2. Right-click anywhere on the page and select **Inspect** (or press `F12`).
 3. Go to the **Application** tab (Chrome) or **Storage** tab (Firefox).
 4. Under **Storage**, click **Cookies**.
-5. Select your Moodle domain (e.g., `moodle.vse.cz`).
+5. Select your Moodle domain (e.g., `moodle.domain.cz`).
 6. Look for the cookie named `MoodleSession`.
 7. Copy the **Value** of the cookie.
 8. Paste the value into your `.env` file like this:

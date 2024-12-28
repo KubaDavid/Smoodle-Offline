@@ -10,7 +10,7 @@ import time
 load_dotenv()
 
 # Configuration
-DOMAIN = os.getenv("DOMAIN", "moodle.vse.cz")
+DOMAIN = os.getenv("DOMAIN")
 COURSE_URL = f"https://{DOMAIN}/course/view.php?id={os.getenv('COURSE_ID')}&breadcrumb=1"
 DOWNLOAD_DIR = os.getenv("DOWNLOAD_DIR", "downloads")  # Folder to save the course files
 MOODLE_SESSION_COOKIE = os.getenv("MOODLE_SESSION_COOKIE")
