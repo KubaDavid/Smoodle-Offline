@@ -46,6 +46,9 @@ print("Course Structure:")
 for idx, link in enumerate(section_links):
     print(f"[{idx+1}] {link}")
 
+# Initialize combined HTML
+combined_html = '<html><head><title>Course Content</title></head><body>'
+
 # Loop through each section (Level 1: Sections)
 for idx, link in enumerate(section_links):
     print(f"Processing section {idx+1}/{len(section_links)}: {link}")
@@ -59,15 +62,10 @@ for idx, link in enumerate(section_links):
         )
         section_content = region_main.get_attribute('outerHTML')
 
-        # Create folder based on section title
+        # Add section to combined HTML
         section_title = driver.find_element(By.CSS_SELECTOR, "h2.pcrgrid_course_heading").text
-        folder_path = os.path.join(DOWNLOAD_DIR, section_title)
-        os.makedirs(folder_path, exist_ok=True)
-
-        # Save the content to an HTML file
-        filename = os.path.join(folder_path, "index.html")
-        with open(filename, 'w', encoding='utf-8') as file:
-            file.write(section_content)
+        combined_html += f'<h1>{section_title}</h1>'
+        combined_html += section_content
 
         print(f"Downloaded section: {section_title}")
 
@@ -81,15 +79,12 @@ for idx, link in enumerate(section_links):
 
             # If part is a book, process chapters (Level 3: Chapters)
             if '/book/' in part_url:
-                book_title = driver.find_element(By.CSS_SELECTOR, "h2").text.replace(' ', '_')
-                book_folder = os.path.join(folder_path, book_title)
-                os.makedirs(book_folder, exist_ok=True)
+                book_title = driver.find_element(By.CSS_SELECTOR, "h2").text
+                combined_html += f'<h2>{book_title}</h2>'
 
                 # Save the book's initial content
                 book_content = driver.find_element(By.ID, "region-main").get_attribute('outerHTML')
-                book_filename = os.path.join(book_folder, "index.html")
-                with open(book_filename, 'w', encoding='utf-8') as file:
-                    file.write(book_content)
+                combined_html += book_content
 
                 print(f"Downloaded book: {book_title}")
 
@@ -106,10 +101,9 @@ for idx, link in enumerate(section_links):
 
                         # Save chapter content
                         chapter_content = driver.find_element(By.ID, "region-main").get_attribute('outerHTML')
-                        chapter_title = driver.find_element(By.TAG_NAME, "h2").text.replace(' ', '_')
-                        chapter_filename = os.path.join(book_folder, f"{chapter_title}.html")
-                        with open(chapter_filename, 'w', encoding='utf-8') as file:
-                            file.write(chapter_content)
+                        chapter_title = driver.find_element(By.TAG_NAME, "h2").text
+                        combined_html += f'<h3>{chapter_title}</h3>'
+                        combined_html += chapter_content
 
                         print(f"    Downloaded chapter: {chapter_title}")
                     except Exception as e:
@@ -122,4 +116,11 @@ for idx, link in enumerate(section_links):
 
 # Close the driver
 driver.quit()
-print("Crawling complete!")
+
+# Finalize and save combined HTML
+combined_html += '</body></html>'
+combined_file = os.path.join(DOWNLOAD_DIR, 'combined_course_content.html')
+with open(combined_file, 'w', encoding='utf-8') as file:
+    file.write(combined_html)
+
+print("Crawling complete! Combined content saved.")
