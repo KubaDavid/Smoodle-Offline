@@ -10,8 +10,8 @@ import time
 load_dotenv()
 
 # Configuration
-BASE_URL = os.getenv("BASE_URL", "https://moodle.vse.cz")
-COURSE_URL = f"{BASE_URL}/course/view.php?id={os.getenv('COURSE_ID')}&breadcrumb=1"
+DOMAIN = os.getenv("DOMAIN", "moodle.vse.cz")
+COURSE_URL = f"https://{DOMAIN}/course/view.php?id={os.getenv('COURSE_ID')}&breadcrumb=1"
 DOWNLOAD_DIR = os.getenv("DOWNLOAD_DIR", "downloads")  # Folder to save the course files
 MOODLE_SESSION_COOKIE = os.getenv("MOODLE_SESSION_COOKIE")
 
@@ -27,23 +27,28 @@ options.add_argument("--disable-gpu") # Chromedriver has some issues in WSL so t
 driver = webdriver.Chrome(options=options)
 
 # Inject the MoodleSession cookie
-driver.get(BASE_URL)
+driver.get(f"https://{DOMAIN}")
 driver.add_cookie({
     'name': 'MoodleSession',
     'value': MOODLE_SESSION_COOKIE,
-    'domain': 'moodle.vse.cz'
+    'domain': DOMAIN
 })
 
 # Navigate to the course
 driver.get(COURSE_URL)
 WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "topics")))
 
-# Extract section links
+# Extract section links and remove duplicates
 sections = driver.find_elements(By.CSS_SELECTOR, "ul.topics li a")
-section_links = [section.get_attribute('href') for section in sections]
+section_links = list(dict.fromkeys([section.get_attribute('href') for section in sections]))
 
-# Loop through each section
-for link in section_links:
+print("Course Structure:")
+for idx, link in enumerate(section_links):
+    print(f"[{idx+1}] {link}")
+
+# Loop through each section (Level 1: Sections)
+for idx, link in enumerate(section_links):
+    print(f"Processing section {idx+1}/{len(section_links)}: {link}")
     driver.get(link)
     time.sleep(2)
 
@@ -65,6 +70,52 @@ for link in section_links:
             file.write(section_content)
 
         print(f"Downloaded section: {section_title}")
+
+        # Check for links to parts within the section (Level 2: Parts)
+        part_links = driver.find_elements(By.CSS_SELECTOR, 'a[href*="/mod/"]')
+        for part_idx, part_link in enumerate(part_links):
+            part_url = part_link.get_attribute('href')
+            print(f"  Part {part_idx+1}/{len(part_links)}: {part_url}")
+            driver.get(part_url)
+            time.sleep(2)
+
+            # If part is a book, process chapters (Level 3: Chapters)
+            if '/book/' in part_url:
+                book_title = driver.find_element(By.CSS_SELECTOR, "h2").text.replace(' ', '_')
+                book_folder = os.path.join(folder_path, book_title)
+                os.makedirs(book_folder, exist_ok=True)
+
+                # Save the book's initial content
+                book_content = driver.find_element(By.ID, "region-main").get_attribute('outerHTML')
+                book_filename = os.path.join(book_folder, "index.html")
+                with open(book_filename, 'w', encoding='utf-8') as file:
+                    file.write(book_content)
+
+                print(f"Downloaded book: {book_title}")
+
+                # Gather all chapter links once to avoid stale references
+                chapter_links = [link.get_attribute('href') for link in driver.find_elements(By.CSS_SELECTOR, 'div.book_toc ul li a')]
+                print(f"  Found {len(chapter_links)} chapters in book {book_title}.")
+
+                # Process each chapter
+                for chapter_idx, chapter_url in enumerate(chapter_links):
+                    try:
+                        print(f"    Chapter {chapter_idx+1}/{len(chapter_links)}: {chapter_url}")
+                        driver.get(chapter_url)
+                        time.sleep(2)
+
+                        # Save chapter content
+                        chapter_content = driver.find_element(By.ID, "region-main").get_attribute('outerHTML')
+                        chapter_title = driver.find_element(By.TAG_NAME, "h2").text.replace(' ', '_')
+                        chapter_filename = os.path.join(book_folder, f"{chapter_title}.html")
+                        with open(chapter_filename, 'w', encoding='utf-8') as file:
+                            file.write(chapter_content)
+
+                        print(f"    Downloaded chapter: {chapter_title}")
+                    except Exception as e:
+                        print(f"    Failed to download chapter {chapter_idx+1}: {str(e)}")
+            else:
+                print(f"  Skipping non-book part: {part_url}")
 
     except Exception as e:
         print(f"Failed to download content from {link}: {str(e)}")
