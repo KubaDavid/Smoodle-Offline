@@ -1,4 +1,4 @@
-# Šmoodle Crawler
+# Šmoodle Offline
 
 ## Overview
 This tool is designed for students to download and organize course content from Moodle for offline reading. It uses Python with Selenium to crawl through Moodle course sections, parts, and chapters, and compiles all the downloaded content into a single, easy-to-navigate HTML file.
