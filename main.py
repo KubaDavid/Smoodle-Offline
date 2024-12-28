@@ -1,15 +1,19 @@
+import os
+from dotenv import load_dotenv
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import os
 import time
 
+# Load environment variables
+load_dotenv()
+
 # Configuration
-BASE_URL = "https://moodle.vse.cz"
-COURSE_URL = f"{BASE_URL}/course/view.php?id=13407&breadcrumb=1"  # Replace with your course ID
-DOWNLOAD_DIR = "downloads"  # Folder to save the course files
-MOODLE_SESSION_COOKIE = "3us4a9beuf6ii7efg6ges388ph"  # Replace with your MoodleSession cookie
+BASE_URL = os.getenv("BASE_URL", "https://moodle.vse.cz")
+COURSE_URL = f"{BASE_URL}/course/view.php?id={os.getenv('COURSE_ID')}&breadcrumb=1"
+DOWNLOAD_DIR = os.getenv("DOWNLOAD_DIR", "downloads")  # Folder to save the course files
+MOODLE_SESSION_COOKIE = os.getenv("MOODLE_SESSION_COOKIE")
 
 # Create download directory if it doesn't exist
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
@@ -17,8 +21,9 @@ os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 # Setup Selenium WebDriver
 options = webdriver.ChromeOptions()
 # options.add_argument("--headless")  # Run in headless mode
-options.add_argument("--no-sandbox")
-options.add_argument("--disable-dev-shm-usage")
+# options.add_argument("--no-sandbox")
+# options.add_argument("--disable-dev-shm-usage")
+options.add_argument("--disable-gpu") # Chromedriver has some issues in WSL so this fixes it
 driver = webdriver.Chrome(options=options)
 
 # Inject the MoodleSession cookie
